@@ -16,10 +16,14 @@ function makeDeck(){
         return acc.concat(names.map(name=> new Card(name, suit, n++))) 
       },[])
     }
-    
+      
     cut(x){
-      return this.stack = [...this.stack.slice(x), ...this.stack.slice(0,x)]
+     return (/*this.stack = */ 
+        !!x ? [...this.stack.slice(x), ...this.stack.slice(0,x)] 
+          : this.stack
+       )
     }
+
 
     }  
   }
