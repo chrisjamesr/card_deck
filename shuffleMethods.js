@@ -1,108 +1,100 @@
-const arr = ((n=52)=> Array.from({length: n}, (value, key) => key) )();
-
-// parameter: array of elements
-// action: bisect array
-// return: array of two equal length arrays 
-const bisect = (arr) => [arr.slice(0,arr.length/2), arr.slice(arr.length/2)]
-
-// parameter: array of elements
-// action: divide array in 3
-// return: array of three equal length arrays 
-const trisect = (arr) =>[
-        arr.slice(Math.floor(arr.length/3), Math.floor(arr.length/3)*2),
-        arr.slice(0,Math.floor(arr.length/3)), 
-        arr.slice(Math.floor(arr.length/3)*2)
-    ]
-
-const section = (sectionQuantity) =>[
-        arr.slice(arr.length/sectionQuantity, arr.length/sectionQuantity*2),
-        arr.slice(0,arr.length/sectionQuantity), 
-        arr.slice(arr.length/sectionQuantity*2)
-    ]    
-
-// parameter: index, array
-// action: split in 2 and combine in 1 to 1 array
-// return: reordered array of elements
-const shuffleOneToOne = (array) => {
-  return array.reduce((acc, ele, i, a) => {
-    acc[bisectAtIndex(i, a)] = ele
-    return acc
-  },[])
-}
-
-// parameter: index, array
-// action: find distance from midpoint of array and return new index for shuffleOneToOne
-// return: new index    
-const bisectAtIndex= (index,array) => {
-  return index > ((array.length-1)+(array.length%2))-array.length/2 ?   
-    index - ((array.length-1+array.length%2)-index) : index+index 
-}
-
-// parameter: index
-// action: modulo by 2
-// return: boolean  
-const isEven = (i) => i%2 ? false : true
-
-// parameter: array of arrays
-// action: reverses odd indexed arrays
-// return: array of arrays
-const reverseOne = (array) => {
-  return array.map((arrayElement, i, arr) => {
-    return i % 2 === 0 ? arrayElement.reverse() : arrayElement
-  })
-}
-// parameter: array of arrays
-// action: reverses odd indexed arrays
-// return: array of arrays
-const reverse = (arr) => arr.reduce((acc, ele, i)=> isEven(i.length) ? ele.reverse() : ele )
-
-// parameters: array of arrays
-// action: joins arrays into single array
-// return: combined array    
-const rejoin = (arr) => arr.reduce((acc,e)=>acc.concat(e))
-
-// parameters: functions
-// action: call functions in succession with result of previous call
-// return: new function of composed functions
-const compose=(...fns)=> (...args)=> fns.reduceRight((acc,fn)=> fn(acc), ...args)
-
-// parameters: array
-// action: find divisors for whole number result
-// return: array of divisors
-
-const cutBy = (arr) => {
-    return arr.filter((ele, i, a)=> a.length % ele===0)
-}
-
-// parameters: array of divisors
-// action: finds median divisor   
-// return: median divisor
-
-const cutAt = (divisorArr) => divisorArr[Math.ceil((divisorArr.length-1)/2)]   
-
-const sectionQuantity = compose(cutAt, cutBy) 
-/*
-section deck -> 
-find whole divisors -> 
-find median divisor ->
-shuffle each section
-*/
-// outerArray.map((ele,index) => {
-//   return Array.from({length: arr.length/sectionQuantity(arr)},(e,i) => index * arr.length/sectionQuantity(arr) + index)
-//     }
-// )}
-const sectionedArray = (x=sectionQuantity(arr)) => Array.from({length: x}, (ele, index) => { 
-  return Array.from(
-    {
-      length: arr.length/x
-    }, (e,i) => index * arr.length/x + i
-  )
-})
-
-const applyFn = (fn) => {
-  return array => {
-    return array.reduce((acc, ele)=> fn(acc.concat(ele)))
+  const compose = (...fns) => (...args) => fns.reduceRight( (acc, fn) => fn(acc), ...args)
+  const applyMap = fn => {
+     return array => array.map(ele => fn(ele))
+  } 
+  const applyReduce = (fn) => {
+    return array => {
+      return array.reduce((acc, ele)=> fn(acc.concat(ele)))
+    }
   }
-}
+  const rejoin = (arr) => arr.reduce((acc,e)=>acc.concat(e))
+  
+  function bisect(arr){
+      return [arr.slice(0,arr.length/2), arr.slice(arr.length/2)]
+  }
+  // Accepts array of elements and shuffles one to one 
+  function shuffleSelection(arr){  
+    const shuffleOneToOne = (arr) => {
+        return arr.reduce((acc, ele, i, a) => {
+        acc[bisectAtIndex(i, a.length)] = ele
+        return acc
+        }, [])
+    }
+    const bisectAtIndex = (index, length = 52) => {
+        return index > (length - 1 - (index % 2)) / 2 ?
+        index - ((length-1+length%2)-index) : index + index
+    }
+    return shuffleOneToOne(arr)
+  }
+   
+  //accepts array of arrays and reverses even indexed arrays
+ 
+  function reverseSelected(arr){
+    const reverseEvenIndexed = (arr) => {
+        return arr.map((e, i) => i % 2 === 0 ? e.reverse() : e)
+    }  
+    return reverseEvenIndexed(arr) 
+  }
+  
+  function shuffleEach(arr){
+      return applyMap(shuffleSelection)(arr)
+  }
+  
+  function combineAll(arr){
+      return rejoin(arr)
+  }
+  
+  function shuffleHalf(arr){
+      return compose(bisect)(arr)
+  }  
 
-const shuffleAll = applyFn(shuffleOneToOne)
+  const smallDivisor = (divisorArr) => divisorArr.find((e, i, a)=> e * a[i-1] > a[i+1])   
+  const largeDivisor = (divisorArr) => divisorArr.find((e, i, a)=> e * a[i+1] > a[i+2])    
+
+  function divideSections(sectionQuantityFunction){
+    return function (arr){
+
+      const divisorArray = (arr) => {
+        return [...arr.keys()].filter((ele, i, a)=> {
+            return a.length % i === 0
+        })
+      } 
+      const sectionArray = (sectionQuantityFunction) => (array) => {
+        const sections = sectionQuantityFunction(array)      
+        return Array.from({length: sections}, (ele, index) => { 
+          return Array.from(
+            {
+              length: array.length/sections
+            }, (e,i) => array[index * array.length/sections + i]
+          )
+        })
+     }     
+    return sectionArray(compose(sectionQuantityFunction, divisorArray))(arr)
+   }
+  }
+  
+  const smallSections = divideSections(largeDivisor)
+  const largeSections = divideSections(smallDivisor)
+  
+  function cutDeck(arr){
+    return x => {
+      x = x || Math.ceil(arr.length/2);
+      return [...arr.slice(x), ...arr.slice(0,x)]
+    }
+  }
+     
+  function shuffleAll(arr){
+     return compose(
+        shuffleSelection, 
+        combineAll,
+        reverseSelected, 
+        shuffleEach,
+        largeSections,
+        shuffleSelection,
+        combineAll,
+        reverseSelected, 
+        shuffleEach, 
+        smallSections, 
+        shuffleSelection
+        )(arr)
+  }
